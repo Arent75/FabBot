@@ -40,6 +40,8 @@ namespace SexyBot
 
             await client.ConnectAsync();
 
+            StatusService.SetMinecraftStatusAsync(client);
+
             await Task.Delay(-1);
         }
 

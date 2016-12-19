@@ -14,12 +14,12 @@ namespace SexyBot
         [Command("panel"), Summary("Returns status of the Minecraft server panel")]
         public async Task PanelStatusAsync()
         {
-            var panelStatus = await MinecraftCommandHelpers.GetPanelStatusAsync();
+            var panelStatus = await MinecraftHelpers.GetPanelStatusAsync();
             await Context.Channel.SendMessageAsync($"Panel 78 is {panelStatus}");
         }
     }
 
-    static class MinecraftCommandHelpers
+    static class MinecraftHelpers
     {
         public static async Task<string> GetPanelStatusAsync()
         {
