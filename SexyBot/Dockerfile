@@ -1,4 +1,4 @@
-FROM microsoft/dotnet:latest
+FROM microsoft/dotnet:1.1-runtime
 ARG source
 WORKDIR /app
 COPY ${source:-bin/Release/PublishOutput} .

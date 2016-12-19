@@ -3,41 +3,79 @@ using Discord;
 using Discord.WebSocket;
 using System.Threading.Tasks;
 using System.Linq;
+using Discord.Commands;
+using System.Reflection;
 
-class Program
+namespace SexyBot
 {
-    static void Main(string[] args) => new Program().RunAsync().GetAwaiter().GetResult();
-
-    private DiscordSocketClient client;
-
-    public async Task RunAsync()
+    public class Program
     {
-        client = new DiscordSocketClient();
+        static void Main(string[] args) => new Program().RunAsync().GetAwaiter().GetResult();
 
-        string token = "MjUxNDAzODcyMDM4Mjg5NDA5.CxvZLg.D4qdH8YZnhqOoW5z-kWnYUPLpLo";
+        private CommandService commands;
+        private DiscordSocketClient client;
+        private DependencyMap map;
 
-        client.MessageReceived += async (message) =>
+        public async Task RunAsync()
         {
-            if (message.MentionedUsers.Any(u => u.Id == client.CurrentUser.Id) && !message.Content.Contains("Who's the sexiest of them all?") && message.Author.Id != client.CurrentUser.Id)
-                await message.Channel.SendMessageAsync("Stop poking me!");
+            client = new DiscordSocketClient();
+            commands = new CommandService();
 
-            if (message.MentionedUsers.Any(u => u.Id == client.CurrentUser.Id) && message.Content.Contains("Who's the sexiest of them all?"))
-                await message.Channel.SendMessageAsync($"{PickSexiestUser(client.Guilds.FirstOrDefault()).Mention} is the sexist of them all, of course.");
-        };
+            string token = "MjUxNDAzODcyMDM4Mjg5NDA5.CxvZLg.D4qdH8YZnhqOoW5z-kWnYUPLpLo";
 
-        await client.LoginAsync(TokenType.Bot, token);
+            map = new DependencyMap();
 
-        await client.ConnectAsync();
+            await InstallCommands();
 
-        await Task.Delay(-1);
-    }
+            client.MessageReceived += async (message) =>
+            {
+                if (message.MentionedUsers.Any(u => u.Id == client.CurrentUser.Id) && !message.Content.Contains("Who's the sexiest of them all?") && message.Author.Id != client.CurrentUser.Id)
+                    await message.Channel.SendMessageAsync("Stop poking me!");
 
-    private SocketUser PickSexiestUser(SocketGuild guild)
-    {
-        Random random = new Random();
+                if (message.MentionedUsers.Any(u => u.Id == client.CurrentUser.Id) && message.Content.Contains("Who's the sexiest of them all?"))
+                    await message.Channel.SendMessageAsync($"{PickSexiestUser(client.Guilds.FirstOrDefault()).Mention} is the sexist of them all, of course.");
+            };
 
-        var count = guild.MemberCount;
-        var index = random.Next(0, count - 1);
-        return guild.Users.ElementAtOrDefault(index);
+            await client.LoginAsync(TokenType.Bot, token);
+
+            await client.ConnectAsync();
+
+            await Task.Delay(-1);
+        }
+
+        private SocketUser PickSexiestUser(SocketGuild guild)
+        {
+            Random random = new Random();
+
+            var count = guild.MemberCount;
+            var index = random.Next(0, count - 1);
+            return guild.Users.ElementAtOrDefault(index);
+        }
+
+        public async Task InstallCommands()
+        {
+            // Hook the MessageReceived Event into our Command Handler
+            client.MessageReceived += HandleCommand;
+            // Discover all of the commands in this assembly and load them.
+            await commands.AddModulesAsync(Assembly.GetEntryAssembly());
+        }
+        public async Task HandleCommand(SocketMessage messageParam)
+        {
+            // Don't process the command if it was a System Message
+            var message = messageParam as SocketUserMessage;
+            if (message == null) return;
+            // Create a number to track where the prefix ends and the command begins
+            int argPos = 0;
+            // Determine if the message is a command, based on if it starts with '!' or a mention prefix
+            if (!(message.HasCharPrefix('!', ref argPos) || message.HasMentionPrefix(client.CurrentUser, ref argPos))) return;
+            // Create a Command Context
+            var context = new CommandContext(client, message);
+            // Execute the command. (result does not indicate a return value, 
+            // rather an object stating if the command executed succesfully)
+            var result = await commands.ExecuteAsync(context, argPos, map);
+            if (!result.IsSuccess)
+                await message.Channel.SendMessageAsync(result.ErrorReason);
+        }
+
     }
 }
