@@ -12,13 +12,27 @@ namespace SexyBot
     {
         public static void SetMinecraftStatusAsync(DiscordSocketClient client)
         {
+            var autoEvent = new AutoResetEvent(false);
+
             var timer = new Timer(async (e) =>
             {
                 var panelStatus = await MinecraftHelpers.GetPanelStatusAsync();
-                await client.SetGame($"Panel 78 is {panelStatus}");
-            }, null, 1000, 60000);
-            
+                var serverStatus = await MinecraftHelpers.GetServerStatusAsync();
 
+                if(panelStatus == "offline")
+                {
+                    await client.SetGame($"Panel is {panelStatus}");
+                }
+                else if(panelStatus == "online" && serverStatus == "offline")
+                {
+                    await client.SetGame($"Minecraft is {serverStatus}");
+                }
+                else
+                {
+                    await client.SetGame($"Minecraft is {serverStatus}");
+                }
+                
+            }, autoEvent, 0, 60000);
         }
     }
 }

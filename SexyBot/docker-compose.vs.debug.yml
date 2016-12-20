@@ -2,7 +2,7 @@ version: '2'
 
 services:
   sexybot:
-    image: user/sexybot:dev
+    image: timdturner/sexybot-discord:dev
     volumes:
       - .:/app
       - ~/.nuget/packages:/root/.nuget/packages:ro

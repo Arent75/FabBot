@@ -9,6 +9,7 @@
     <EmbeddedResource Include="**\*.resx" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="avatar.png" />
     <Content Include="Properties\launchSettings.json" />
   </ItemGroup>
   <ItemGroup>

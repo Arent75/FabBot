@@ -1,4 +1,5 @@
-﻿using Discord.Commands;
+﻿using Discord;
+using Discord.Commands;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -8,14 +9,42 @@ using System.Threading.Tasks;
 
 namespace SexyBot
 {
+    [Group("test")]
+    public class TestCommands : ModuleBase
+    {
+        [Command("test"), Summary("A test")]
+        public async Task TestAsync()
+        {
+            await Context.Channel.SendMessageAsync("test");
+        }
+    }
+
     [Group("minecraft")]
     public class MinecraftCommands : ModuleBase
     {
         [Command("panel"), Summary("Returns status of the Minecraft server panel")]
         public async Task PanelStatusAsync()
         {
+            var message = await Context.Channel.SendMessageAsync("`Retrieving Data, please wait...`");
             var panelStatus = await MinecraftHelpers.GetPanelStatusAsync();
-            await Context.Channel.SendMessageAsync($"Panel 78 is {panelStatus}");
+            await message.ModifyAsync(m => m.Content = $"Panel 78 is {panelStatus}");
+        }
+
+        [Command("server"), Summary("Returns status of the Minecraft Server")]
+        public async Task ServerStatusAsync()
+        {
+            var message = await Context.Channel.SendMessageAsync("`Retrieving Data, please wait...`");
+            var serverStatus = await MinecraftHelpers.GetServerStatusAsync();
+            await message.ModifyAsync(m => m.Content = $"Server is {serverStatus}");
+        }
+
+        [Command("status"), Summary("Returns status of the Minecraft System")]
+        public async Task SystemStatusAsync()
+        {
+            var message = await Context.Channel.SendMessageAsync("`Retrieving Data, please wait...`");
+            var panelStatus = await MinecraftHelpers.GetPanelStatusAsync();
+            var serverStatus = await MinecraftHelpers.GetServerStatusAsync();
+            await message.ModifyAsync(m => m.Content = $"Panel 78 is {panelStatus}, Server is {serverStatus}");
         }
     }
 
@@ -23,7 +52,7 @@ namespace SexyBot
     {
         public static async Task<string> GetPanelStatusAsync()
         {
-            string serverStatus = "offline";
+            string panelStatus = "offline";
             using (var client = new HttpClient())
             {
                 GGServerStatus status = new GGServerStatus();
@@ -35,12 +64,36 @@ namespace SexyBot
 
                     if(!status.Load.Contains("Down"))
                     {
-                        serverStatus = "online";
+                        panelStatus = "online";
                     }
                 }
 
-                return serverStatus;
+                return panelStatus;
             }
+        }
+
+        public static async Task<string> GetServerStatusAsync()
+        {
+
+            string serverStatus = "offline";
+
+            using (var client = new HttpClient())
+            {
+                MinecraftServerStatus status = new MinecraftServerStatus();
+                HttpResponseMessage response = await client.GetAsync("https://mcapi.us/server/status?ip=192.99.20.208&port=29871");
+                if(response.IsSuccessStatusCode)
+                {
+                    string statusString = await response.Content.ReadAsStringAsync();
+                    status = JsonConvert.DeserializeObject<MinecraftServerStatus>(statusString);
+
+                    if(status.Online)
+                    {
+                        serverStatus = "online";
+                    }
+                }
+            }
+
+            return serverStatus;
         }
     }
 
@@ -52,4 +105,31 @@ namespace SexyBot
         public string Online { get; set; }
         public string Uptime { get; set; }
     }
+
+    public class MinecraftServerStatus
+    {
+        public string Status { get; set; }
+        public bool Online { get; set; }
+        public string Motd { get; set; }
+        public string Error { get; set; }
+        public Players Players { get; set; }
+        public Server Server { get; set; }
+        public string Last_online { get; set; }
+        public string Last_updated { get; set; }
+        public int Duration { get; set; }
+    }
+
+    public class Players
+    {
+        public int Max { get; set; }
+        public int Now { get; set; }
+    }
+
+    public class Server
+    {
+        public string Name { get; set; }
+        public int Protocol { get; set; }
+    }
+
+    
 }

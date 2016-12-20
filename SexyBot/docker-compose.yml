@@ -2,7 +2,7 @@ version: '2'
 
 services:
   sexybot:
-    image: user/sexybot
+    image: timdturner/sexybot-discord
     build:
       context: .
       dockerfile: Dockerfile

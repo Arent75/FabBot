@@ -25,16 +25,7 @@ namespace SexyBot
 
             map = new DependencyMap();
 
-            await InstallCommands();
-
-            client.MessageReceived += async (message) =>
-            {
-                if (message.MentionedUsers.Any(u => u.Id == client.CurrentUser.Id) && !message.Content.Contains("Who's the sexiest of them all?") && message.Author.Id != client.CurrentUser.Id)
-                    await message.Channel.SendMessageAsync("Stop poking me!");
-
-                if (message.MentionedUsers.Any(u => u.Id == client.CurrentUser.Id) && message.Content.Contains("Who's the sexiest of them all?"))
-                    await message.Channel.SendMessageAsync($"{PickSexiestUser(client.Guilds.FirstOrDefault()).Mention} is the sexist of them all, of course.");
-            };
+            await InstallCommandsAsync();
 
             await client.LoginAsync(TokenType.Bot, token);
 
@@ -42,26 +33,26 @@ namespace SexyBot
 
             StatusService.SetMinecraftStatusAsync(client);
 
+            // TODO: Set avatar
+            //await SetAvatarAsync();
+
             await Task.Delay(-1);
         }
 
-        private SocketUser PickSexiestUser(SocketGuild guild)
-        {
-            Random random = new Random();
+        //public async Task SetAvatarAsync()
+        //{
+        //    var fileStream = new FileStream("./avatar.png", FileMode.Open);
+        //    await client.CurrentUser.ModifyAsync(x => x.Avatar = new Image(fileStream));
+        //}
 
-            var count = guild.MemberCount;
-            var index = random.Next(0, count - 1);
-            return guild.Users.ElementAtOrDefault(index);
-        }
-
-        public async Task InstallCommands()
+        public async Task InstallCommandsAsync()
         {
             // Hook the MessageReceived Event into our Command Handler
-            client.MessageReceived += HandleCommand;
+            client.MessageReceived += HandleCommandAsync;
             // Discover all of the commands in this assembly and load them.
             await commands.AddModulesAsync(Assembly.GetEntryAssembly());
         }
-        public async Task HandleCommand(SocketMessage messageParam)
+        public async Task HandleCommandAsync(SocketMessage messageParam)
         {
             // Don't process the command if it was a System Message
             var message = messageParam as SocketUserMessage;
